@@ -127,5 +127,10 @@ helm install registry ./charts/docker-registry \
 | GC not running | Check cronjob: kubectl get cronjobs -n registry |
 | Redis not connected | Verify: kubectl logs -n registry <registry-pod> |
 
+## References
+
+- [Identity-Aware Proxy (IAP) & Pomerium](https://docs.google.com/document/d/18FUUHUP2Vr7Du5jSGJkkzxhfGghE_uCI3rfA0WDdGSk/edit?tab=t.0) — Docs IAP & Pomerium
+
 ## Author
+
 nam.vp — SRE Engineer
