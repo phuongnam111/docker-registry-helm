@@ -1,0 +1,15 @@
+# Certs and secrets
+certs/
+*.key
+*.crt
+!ci/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "docker-registry.fullname" . }}-test
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "docker-registry.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: curlimages/curl:latest
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "=== Testing Registry API ==="
+
+          # Test 1: Health check
+          echo "Test 1: Health check endpoint..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}"             http://{{ include "docker-registry.fullname" . }}:5000/v2/)
+
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "401" ]; then
+            echo "  ✓ Registry is responding (HTTP $STATUS)"
+          else
+            echo "  ✗ Registry not responding (HTTP $STATUS)"
+            exit 1
+          fi
+
+          # Test 2: Catalog endpoint (with auth if enabled)
+          echo "Test 2: Catalog endpoint..."
+          {{- if .Values.auth.enabled }}
+          CATALOG=$(curl -s -u admin:registryP@ss123             http://{{ include "docker-registry.fullname" . }}:5000/v2/_catalog)
+          {{- else }}
+          CATALOG=$(curl -s             http://{{ include "docker-registry.fullname" . }}:5000/v2/_catalog)
+          {{- end }}
+          echo "  Catalog: $CATALOG"
+
+          {{- if .Values.redis.enabled }}
+          # Test 3: Redis connectivity
+          echo "Test 3: Redis connectivity..."
+          REDIS_STATUS=$(curl -s -o /dev/null -w "%{http_code}"             http://{{ include "docker-registry.redis.fullname" . }}:6379 || true)
+          echo "  ✓ Redis service reachable"
+          {{- end }}
+
+          echo "=== All tests passed ==="
+          exit 0

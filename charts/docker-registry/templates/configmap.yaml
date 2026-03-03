@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "docker-registry.fullname" . }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "docker-registry.labels" . | nindent 4 }}
+data:
+  config.yml: |
+    version: 0.1
+    log:
+      level: info
+      formatter: json
+    storage:
+      filesystem:
+        rootdirectory: /var/lib/registry
+      delete:
+        enabled: true
+      cache:
+        blobdescriptor: {{ if .Values.redis.enabled }}redis{{ else }}inmemory{{ end }}
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+    {{- if .Values.auth.enabled }}
+    auth:
+      htpasswd:
+        realm: "Docker Registry"
+        path: /auth/htpasswd
+    {{- end }}
+    {{- if .Values.redis.enabled }}
+    redis:
+      addr: {{ include "docker-registry.redis.fullname" . }}:6379
+      db: 0
+      dialtimeout: 10ms
+      readtimeout: 10ms
+      writetimeout: 10ms
+      pool:
+        maxidle: 16
+        maxactive: 64
+        idletimeout: 300s
+    {{- end }}
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3

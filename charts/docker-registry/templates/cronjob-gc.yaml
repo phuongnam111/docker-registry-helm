@@ -1,0 +1,53 @@
+{{- if .Values.gc.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "docker-registry.fullname" . }}-gc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "docker-registry.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.gc.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "docker-registry.selectorLabels" . | nindent 12 }}
+            role: garbage-collection
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: gc
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "Starting garbage collection..."
+                  /bin/registry garbage-collect {{ if .Values.gc.deleteUntagged }}-m {{ end }}/etc/docker/registry/config.yml
+                  echo "Garbage collection completed at $(date)"
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/docker/registry
+                  readOnly: true
+                - name: data
+                  mountPath: /var/lib/registry
+              resources:
+                {{- toYaml .Values.gc.resources | nindent 16 }}
+          volumes:
+            - name: config
+              configMap:
+                name: {{ include "docker-registry.fullname" . }}-config
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ include "docker-registry.fullname" . }}-data
+            {{- else }}
+            - name: data
+              emptyDir: {}
+            {{- end }}
+{{- end }}

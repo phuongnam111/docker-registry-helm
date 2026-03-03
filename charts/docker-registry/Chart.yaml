@@ -1,0 +1,20 @@
+apiVersion: v2
+name: docker-registry
+description: |
+  A Helm chart to deploy a private Docker Registry (registry:2)
+  on Kubernetes with authentication, TLS, garbage collection,
+  and Redis metadata caching.
+type: application
+version: 1.0.0
+appVersion: "2.8.3"
+maintainers:
+  - name: "[Your Name]"
+    email: "your.email@example.com"
+keywords:
+  - docker
+  - registry
+  - container
+  - images
+home: https://github.com/your-username/docker-registry-helm
+sources:
+  - https://docs.docker.com/registry/

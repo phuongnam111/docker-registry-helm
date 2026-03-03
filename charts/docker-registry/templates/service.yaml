@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "docker-registry.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "docker-registry.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "docker-registry.selectorLabels" . | nindent 4 }}

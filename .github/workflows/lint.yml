@@ -1,0 +1,58 @@
+name: Helm Chart Lint & Validate
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'charts/**'
+      - '.github/workflows/lint.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'charts/**'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Setup Helm
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.14.0
+
+      # 3. Install yamllint
+      - name: Install yamllint
+        run: pip install yamllint
+
+      # 4. YAML lint on all yaml files
+      - name: Run yamllint
+        run: |
+          yamllint -d "{extends: default, rules: {line-length: {max: 200}, truthy: disable}}"             charts/docker-registry/values.yaml             charts/docker-registry/Chart.yaml
+
+      # 5. Helm lint with default values
+      - name: Helm lint (default values)
+        run: helm lint charts/docker-registry/
+
+      # 6. Helm lint with CI test values
+      - name: Helm lint (CI test values)
+        run: helm lint charts/docker-registry/ -f charts/docker-registry/ci/test-values.yaml
+
+      # 7. Helm template render — verify no template errors
+      - name: Helm template render
+        run: |
+          helm template test-release charts/docker-registry/             -f charts/docker-registry/ci/test-values.yaml             --debug
+
+      # 8. Chart Testing (ct) — advanced validation
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Run chart-testing lint
+        run: ct lint --charts charts/docker-registry/

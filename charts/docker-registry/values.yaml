@@ -1,0 +1,119 @@
+# ====================================================================
+# Docker Registry Helm Chart — Default Values
+# ====================================================================
+# All configuration is customizable via this file or --set flags.
+# Override with: helm install registry ./charts/docker-registry -f custom-values.yaml
+
+# -- Namespace
+namespace: registry
+
+# ====================================================================
+# Registry Image
+# ====================================================================
+image:
+  repository: registry
+  tag: "2"
+  pullPolicy: IfNotPresent
+
+# ====================================================================
+# Registry Replicas & Resources
+# ====================================================================
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# ====================================================================
+# Authentication (htpasswd)
+# ====================================================================
+# Generate htpasswd string with:
+#   ./scripts/generate-htpasswd.sh <username> <password>
+# Or manually:
+#   docker run --rm --entrypoint htpasswd registry:2 -Bbn user password
+auth:
+  enabled: true
+  # Base64-encoded htpasswd file content
+  # Default: admin / registryP@ss123
+  htpasswd: "YWRtaW46JDJ5JDA1JEdLNUJhVnBKZHFzd0xrTG9zZjdIZk9WVW5QZHpvMHRWN2lWZGV0YTdHWjRxa0pzUm5X"
+
+# ====================================================================
+# TLS / Domain Configuration
+# ====================================================================
+tls:
+  enabled: true
+  # Base64-encoded TLS certificate and key
+  # Generate with: ./scripts/generate-tls.sh
+  crt: ""
+  key: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  host: registry.local
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+
+# ====================================================================
+# Storage (Persistent Volume)
+# ====================================================================
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 20Gi
+  accessMode: ReadWriteOnce
+
+# ====================================================================
+# Redis Cache (Metadata Caching)
+# ====================================================================
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "7-alpine"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# ====================================================================
+# Garbage Collection CronJob
+# ====================================================================
+gc:
+  enabled: true
+  # Cron schedule (default: every day at 2:00 AM)
+  schedule: "0 2 * * *"
+  # Delete untagged manifests
+  deleteUntagged: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+# ====================================================================
+# Health Check & Probes
+# ====================================================================
+healthCheck:
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 5000
+    initialDelaySeconds: 10
+    periodSeconds: 30
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 5000
+    initialDelaySeconds: 5
+    periodSeconds: 10

@@ -1,0 +1,31 @@
+# CI Test Values — minimal config for automated testing
+# Used by: helm lint, helm template, CI pipeline
+
+namespace: registry-test
+
+replicaCount: 1
+
+image:
+  repository: registry
+  tag: "2"
+
+auth:
+  enabled: true
+  htpasswd: "dGVzdDokMnkkMDUkdGVzdGhhc2g="
+
+tls:
+  enabled: false
+
+ingress:
+  enabled: false
+
+persistence:
+  enabled: false
+
+redis:
+  enabled: true
+
+gc:
+  enabled: true
+  schedule: "0 3 * * 0"
+  deleteUntagged: true
